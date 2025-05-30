@@ -1,0 +1,15 @@
+Apathetic
+Bitter
+Committed
+Cunning
+Cynical
+Devout
+Faithful
+Independent
+Loyal
+Rebellious
+Resentful
+Righteous
+Selfless
+Wavering
+Zealous

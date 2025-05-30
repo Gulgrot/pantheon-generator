@@ -1,0 +1,47 @@
+/* True God */
+.callout[data-callout="god-true"] {
+  --callout-color: 255, 80, 80;       /* Red */
+  --callout-icon: lucide-sparkles;
+}
+
+/* Lesser God */
+.callout[data-callout="god-lesser"] {
+  --callout-color: 255, 160, 0;       /* Orange */
+  --callout-icon: lucide-sparkle;
+}
+
+/* Demigod */
+.callout[data-callout="god-demigod"] {
+  --callout-color: 255, 220, 0;       /* Yellow */
+  --callout-icon: lucide-flame;
+}
+
+/* Angel */
+.callout[data-callout="god-angel"] {
+  --callout-color: 0, 255, 80;        /* Green */
+  --callout-icon: lucide-feather;
+}
+
+/* Saint */
+.callout[data-callout="god-saint"] {
+  --callout-color: 0, 255, 255;       /* Cyan */
+  --callout-icon: lucide-heart;
+}
+
+/* Champion */
+.callout[data-callout="god-champion"] {
+  --callout-color: 80, 160, 255;      /* Blue */
+  --callout-icon: lucide-trophy;
+}
+
+/* False God */
+.callout[data-callout="god-false"] {
+  --callout-color: 200, 80, 255;      /* Purple */
+  --callout-icon: lucide-shield-x;
+}
+
+/* Shattered God */
+.callout[data-callout="god-shattered"] {
+  --callout-color: 255, 0, 180;       /* Magenta */
+  --callout-icon: lucide-zap-off;
+}
