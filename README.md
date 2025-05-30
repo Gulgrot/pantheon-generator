@@ -37,7 +37,7 @@ See `Hierarchy.md` for full descriptions and examples.
 
 ---
 
-## 🛠 How It Works
+## How It Works
 
 ### Tools Required:
 - [Obsidian](https://obsidian.md/)
