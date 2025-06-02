@@ -1,13 +1,13 @@
-Human
+Aasimar
+Dragonborn
+Dwarf
 High Elf
 Wood Elf
 Drow
-Dwarf
-Halfling
 Gnome
-Dragonborn
-Goliath
-Orc
 Goblin
+Goliath
+Halfling
+Human
+Orc
 Tiefling
-Aasimar

@@ -109,6 +109,19 @@ const renderTemplate = (template, wordBank = DEFAULT_WORD_BANK) => {
   return capitalize(rendered);
 };
 
+const usedNames = new Set();
+const availableNames = [...names];
+
+const pickUniqueName = () => {
+  if (availableNames.length === 0) {
+    throw new Error("Ran out of unique names!");
+  }
+  const idx = Math.floor(Math.random() * availableNames.length);
+  const name = availableNames.splice(idx, 1)[0];
+  usedNames.add(name);
+  return name;
+};
+
 const enrichByTier = (god) => {
   switch (god.tier) {
     case "True God":
@@ -148,10 +161,47 @@ const enrichByTier = (god) => {
   }
 };
 
-const pantheon = pick(pantheons);
+// Load deity counts from Pantheon Generator frontmatter
+const loadFrontmatter = async (filepath) => {
+  const file = app.vault.getAbstractFileByPath(filepath);
+  if (!file) return {};
+  const content = await app.vault.read(file);
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return {};
+
+  const numericKeys = [
+    "amtTrueGod", "amtLesserGod", "amtDemigod",
+    "amtAngel", "amtSaint", "amtChampion",
+    "amtFalseGod", "amtShatteredGod"
+  ];
+
+  const frontmatter = Object.fromEntries(
+    match[1]
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.includes(':'))
+      .map(line => {
+        const [key, ...rest] = line.split(':');
+        const value = rest.join(':').trim();
+        return [key.trim(), numericKeys.includes(key.trim()) ? parseInt(value) : value];
+      })
+  );
+
+  return frontmatter;
+};
+
+const pantheonSettings = await loadFrontmatter("z_Generators/Pantheon Generator/settings.md");
+
+let pantheon;
+if (!pantheonSettings.selectedPantheon || pantheonSettings.selectedPantheon === "Random") {
+  pantheon = pick(pantheons);
+} else {
+  pantheon = pantheonSettings.selectedPantheon;
+}
+
 const generateGod = (tier) => {
   const god = {
-    name: pick(names),
+    name: pickUniqueName(),
     tier: tier,
     epithet: capitalizeTitle(renderTemplate(pick(epithets))),
     domain: pick(domains),
@@ -171,14 +221,14 @@ const generateGod = (tier) => {
 };
 
 const tierCounts = {
-  "True God": Math.floor(Math.random() * 5) + 8,       // 8–12
-  "Lesser God": Math.floor(Math.random() * 3) + 4,     // 4–6
-  "Demigod": Math.floor(Math.random() * 2) + 1,        // 1–2
-  "Angel": Math.floor(Math.random() * 3) + 2,          // 2–4
-  "Saint": Math.floor(Math.random() * 3) + 2,          // 2–4
-  "Champion": Math.floor(Math.random() * 2) + 1,       // 1–2
-  "False God": Math.floor(Math.random() * 2) + 1,      // 1–2
-  "Shattered God": Math.floor(Math.random() * 4) + 1   // 1–4
+  "True God": pantheonSettings.amtTrueGod ?? Math.floor(Math.random() * 5) + 8,
+  "Lesser God": pantheonSettings.amtLesserGod ?? Math.floor(Math.random() * 3) + 4,
+  "Demigod": pantheonSettings.amtDemigod ?? Math.floor(Math.random() * 2) + 1,
+  "Angel": pantheonSettings.amtAngel ?? Math.floor(Math.random() * 3) + 2,
+  "Saint": pantheonSettings.amtSaint ?? Math.floor(Math.random() * 3) + 2,
+  "Champion": pantheonSettings.amtChampion ?? Math.floor(Math.random() * 2) + 1,
+  "False God": pantheonSettings.amtFalseGod ?? Math.floor(Math.random() * 2) + 1,
+  "Shattered God": pantheonSettings.amtShatteredGod ?? Math.floor(Math.random() * 4) + 1
 };
 
 const tierCalloutTypes = {
@@ -220,9 +270,9 @@ const gods = Object.entries(tierCounts).flatMap(([tier, count]) =>
 );
 
 const RELATIONSHIP_PAIRS = [
-  ...Array(3).fill(["Parent of", "Child of"]),
+  ...Array(4).fill(["Parent of", "Child of"]),
   ...Array(3).fill(["Sibling of", "Sibling of"]),
-  ...Array(2).fill(["Friend of", "Friend of"]),
+  ["Friend of", "Friend of"],
   ["Mentor of", "Student of"],
   ["Lover of", "Lover of"],
   ["Rival to", "Rival to"],
@@ -430,4 +480,31 @@ tR += "\n\n" + gods.map((g, i) => {
   return `${header}\n${body}`;
 }).join("\n\n");
 
+// Before creating each file
+const ensureFolderExists = async (path) => {
+  const existing = app.vault.getAbstractFileByPath(path);
+  if (!existing) {
+    await app.vault.createFolder(path);
+  }
+};
+
+for (const g of gods) {
+  const tierNumberMap = {
+    "True God": "1",
+    "Lesser God": "2",
+    "Demigod": "3",
+    "Angel": "4",
+    "Saint": "5",
+    "Champion": "6",
+    "False God": "7",
+    "Shattered God": "8"
+  };
+
+  const folderPath = `2-World/Cosmology/Deities/${tierNumberMap[g.tier]}. ${g.tier}s`;
+  const fileName = `${g.name}.md`;
+  const fileContent = formatGod(g, "center");
+
+  await ensureFolderExists(folderPath);
+  await app.vault.create(`${folderPath}/${fileName}`, fileContent);
+}
 %>
