@@ -1,13 +1,25 @@
 <%*
-// Load Data
+/*
+  =====================
+  Section: Utility Functions
+  =====================
+*/
+
+// Load values from a file, trimming and filtering empty lines
 const loadValues = async (filepath) => {
   const file = app.vault.getAbstractFileByPath(filepath);
   if (!file) return [];
   const content = await app.vault.read(file);
-  return content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  return content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
 };
 
+// Pick a random element from an array
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// Pick multiple unique random elements from an array
 const pickMultiple = (arr, count) => {
   const result = [];
   const available = [...arr];
@@ -18,17 +30,21 @@ const pickMultiple = (arr, count) => {
   return result;
 };
 
+// Simple pluralization
 const pluralize = (word) => {
   if (word.endsWith("s")) return word;
   if (word.endsWith("y")) return word.slice(0, -1) + "ies";
   return word + "s";
 };
 
+// Conjugate a verb to "s" or "er" form
 const conjugateVerb = (verb, form) => {
   if (form === "s") {
     if (verb.endsWith("y") && !"aeiou".includes(verb[verb.length - 2])) {
       return verb.slice(0, -1) + "ies";
-    } else if (["s", "x", "z"].includes(verb.slice(-1)) || /ch$|sh$/.test(verb)) {
+    } else if (
+      ["s", "x", "z"].includes(verb.slice(-1)) || /ch$|sh$/.test(verb)
+    ) {
       return verb + "es";
     } else {
       return verb + "s";
@@ -41,17 +57,55 @@ const conjugateVerb = (verb, form) => {
   return verb;
 };
 
+// Capitalize first letter
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-const capitalizeTitle = str =>
-  str.split(" ").map(word =>
-    word.includes("-")
-      ? word.split("-").map(w => capitalize(w)).join("-")
-      : capitalize(word)
-  ).join(" ");
 
+// Title-case each word, handling hyphens
+const capitalizeTitle = (str) =>
+  str
+    .split(" ")
+    .map((word) =>
+      word.includes("-")
+        ? word
+            .split("-")
+            .map((w) => capitalize(w))
+            .join("-")
+        : capitalize(word)
+    )
+    .join(" ");
+
+/*
+  =====================
+  Section: Data Loading
+  =====================
+*/
+
+// Load arrays of values from various data files in parallel
 const [
-  adjectives, adverbs, nouns, verbs, 
-  alignments, ambitions, aspects, colors, createdBy, domains, epithets, hierarchy, holyDays, loyalty, martydom, missions, myths, oldNames, pantheons, patrons, realms, relationships, ruins, symbols, tenets
+	adjectives,
+	adverbs,
+	nouns,
+	verbs,
+	alignments,
+	ambitions,
+	aspects,
+	colors,
+	createdBy,
+	domains,
+	epithets,
+	hierarchy,
+	holyDays,
+	loyalty,
+	martydom,
+	missions,
+	myths,
+	pantheons,
+	patrons,
+	realms,
+	relationships,
+	ruins,
+	symbols,
+	tenets
 ] = await Promise.all([
   loadValues("z_Generators/Pantheon Generator/data/language/adjectives.md"),
   loadValues("z_Generators/Pantheon Generator/data/language/adverbs.md"),
@@ -70,7 +124,6 @@ const [
   loadValues("z_Generators/Pantheon Generator/data/martydom.md"),
   loadValues("z_Generators/Pantheon Generator/data/missions.md"),
   loadValues("z_Generators/Pantheon Generator/data/myths.md"),
-  loadValues("z_Generators/Pantheon Generator/data/names.md"),
   loadValues("z_Generators/Pantheon Generator/data/pantheons.md"),
   loadValues("z_Generators/Pantheon Generator/data/patrons.md"),
   loadValues("z_Generators/Pantheon Generator/data/realms.md"),
@@ -80,17 +133,19 @@ const [
   loadValues("z_Generators/Pantheon Generator/data/tenets.md")
 ]);
 
+// Default word bank for template rendering
 const DEFAULT_WORD_BANK = {
-  nounList: nouns,
-  adjList: adjectives,
-  advList: adverbs,
-  verbList: verbs,
-  colorList: colors
+	nounList: nouns,
+	adjList: adjectives,
+	advList: adverbs,
+	verbList: verbs,
+	colorList: colors
 };
 
+// Render a template string with placeholders using provided word lists
 const renderTemplate = (template, wordBank = DEFAULT_WORD_BANK) => {
   let rendered = (template || "{{adj}} {{noun}}")
-    .replace(/{{adj}}/g, () => pick(wordBank.adjList))
+	.replace(/{{adj}}/g, () => pick(wordBank.adjList))
     .replace(/{{adverb}}/g, () => pick(wordBank.advList))
     .replace(/{{color}}/g, () => pick(wordBank.colorList))
     .replace(/{{noun}}/g, () => pick(wordBank.nounList))
@@ -109,7 +164,13 @@ const renderTemplate = (template, wordBank = DEFAULT_WORD_BANK) => {
   return capitalize(rendered);
 };
 
-// Load deity counts from Pantheon Generator frontmatter
+/*
+  ====================================
+  Section: Frontmatter and Settings
+  ====================================
+*/
+
+// Load frontmatter (YAML) from settings.md
 const loadFrontmatter = async (filepath) => {
   const file = app.vault.getAbstractFileByPath(filepath);
   if (!file) return {};
@@ -118,28 +179,37 @@ const loadFrontmatter = async (filepath) => {
   if (!match) return {};
 
   const numericKeys = [
-    "amtTrueGod", "amtLesserGod", "amtDemigod",
-    "amtAngel", "amtSaint", "amtChampion",
-    "amtFalseGod", "amtShatteredGod"
+    "amtTrueGod",
+    "amtLesserGod",
+    "amtDemigod",
+    "amtAngel",
+    "amtSaint",
+    "amtChampion",
+    "amtFalseGod",
+    "amtShatteredGod"
   ];
 
-  const frontmatter = Object.fromEntries(
+  return Object.fromEntries(
     match[1]
       .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.includes(':'))
-      .map(line => {
+      .map((line) => line.trim())
+      .filter((line) => line.includes(':'))
+      .map((line) => {
         const [key, ...rest] = line.split(':');
         const value = rest.join(':').trim();
-        return [key.trim(), numericKeys.includes(key.trim()) ? parseInt(value) : value];
+        return [
+          key.trim(),
+          numericKeys.includes(key.trim()) ? parseInt(value) : value,
+        ];
       })
   );
-
-  return frontmatter;
 };
 
-const pantheonSettings = await loadFrontmatter("z_Generators/Pantheon Generator/settings.md");
+const pantheonSettings = await loadFrontmatter(
+  "z_Generators/Pantheon Generator/settings.md"
+);
 
+// Determine pantheon (random or selected)
 let pantheon;
 if (!pantheonSettings.selectedPantheon || pantheonSettings.selectedPantheon === "Random") {
   pantheon = pick(pantheons);
@@ -151,16 +221,28 @@ const pantheonSlug = pantheon.toLowerCase().replace(/ /g, "-");
 const pantheonNamePath = `z_Generators/Pantheon Generator/data/names/names-${pantheonSlug}.md`;
 const names = await loadValues(pantheonNamePath);
 
+/*
+  ===========================
+  Section: Name Management
+  ===========================
+*/
+
+// Get all existing deity names under a root folder
 const getAllDeityNames = async (rootPath) => {
   const allFiles = app.vault.getFiles();
-  const deityFiles = allFiles.filter(f => f.path.startsWith(rootPath) && f.path.endsWith(".md"));
-  return new Set(deityFiles.map(f => f.basename.trim()));
+  const deityFiles = allFiles.filter(
+    (f) => f.path.startsWith(rootPath) && f.path.endsWith(".md")
+  );
+  return new Set(deityFiles.map((f) => f.basename.trim()));
 };
 
+const existingNames = await getAllDeityNames(
+  "2-World/Cosmology/Deities/"
+);
 const usedNames = new Set();
-const existingNames = await getAllDeityNames("2-World/Cosmology/Deities/");
-const availableNames = names.filter(name => !existingNames.has(name));
+const availableNames = names.filter((name) => !existingNames.has(name));
 
+// Pick a unique deity name, ensuring no repeats
 const pickUniqueName = () => {
   if (availableNames.length === 0) {
     throw new Error("Ran out of unique names!");
@@ -171,8 +253,15 @@ const pickUniqueName = () => {
   return name;
 };
 
+/*
+  ==========================
+  Section: Deity Generation
+  ==========================
+*/
+
+// Generate a single god object with properties based on tier
 const generateGod = (tier) => {
-  const god = {
+  const baseGod = {
     name: pickUniqueName(),
     tier: tier,
     epithet: capitalizeTitle(renderTemplate(pick(epithets))),
@@ -186,18 +275,19 @@ const generateGod = (tier) => {
     myth: pick(myths),
     isGoddess: Math.random() < 0.5,
     mainSymbol: renderTemplate(pick(symbols)),
-    subSymbols: pickMultiple(nouns, Math.floor(Math.random() * 2) + 1).map(noun => capitalize(pluralize(noun))),
+    subSymbols: pickMultiple(nouns, Math.floor(Math.random() * 2) + 1).map((noun) => capitalize(pluralize(noun)))
   };
-  enrichByTier(god);
-  return god;
+  enrichByTier(baseGod);
+  return baseGod;
 };
 
+// Add or adjust properties specific to each tier
 const enrichByTier = (god) => {
   switch (god.tier) {
     case "True God":
       god.realm = capitalizeTitle(renderTemplate(pick(realms)));
       god.aspects = pickMultiple(aspects, 3);
-      god.subSymbols = pickMultiple(nouns, 2).map(noun => capitalize(pluralize(noun)));
+      god.subSymbols = pickMultiple(nouns, 2).map((noun) => capitalize(pluralize(noun)));
       break;
     case "Demigod":
       god.ambition = pick(ambitions);
@@ -231,31 +321,36 @@ const enrichByTier = (god) => {
   }
 };
 
+// Determine number of deities per tier based on settings
 let tierCounts;
-
 if (!pantheonSettings.selectedDeityCount || pantheonSettings.selectedDeityCount === "Random") {
-  tierCounts = {
-    "True God": Math.floor(Math.random() * 21),
-    "Lesser God": Math.floor(Math.random() * 21),
-    "Demigod": Math.floor(Math.random() * 21),
-    "Angel": Math.floor(Math.random() * 21),
-    "Saint": Math.floor(Math.random() * 21),
-    "Champion": Math.floor(Math.random() * 21),
-    "False God": Math.floor(Math.random() * 21),
-    "Shattered God": Math.floor(Math.random() * 21)
-  };
+  // Random count between 0 and 20 for each tier
+  tierCounts = Object.fromEntries(
+    [
+      "True God",
+      "Lesser God",
+      "Demigod",
+      "Angel",
+      "Saint",
+      "Champion",
+      "False God",
+      "Shattered God"
+    ].map((tier) => [tier, Math.floor(Math.random() * 21)])
+  );
 } else if (pantheonSettings.selectedDeityCount === "Balanced") {
+  // Predefined balanced ranges
   tierCounts = {
-    "True God": Math.floor(Math.random() * 5) + 8,
-    "Lesser God": Math.floor(Math.random() * 3) + 4,
-    "Demigod": Math.floor(Math.random() * 2) + 1,
-    "Angel": Math.floor(Math.random() * 3) + 2,
-    "Saint": Math.floor(Math.random() * 3) + 2,
-    "Champion": Math.floor(Math.random() * 2) + 1,
-    "False God": Math.floor(Math.random() * 2) + 1,
-    "Shattered God": Math.floor(Math.random() * 4) + 1
+    "True God": Math.floor(Math.random() * 5) + 8, // 8–12
+    "Lesser God": Math.floor(Math.random() * 3) + 4, // 4–6
+    "Demigod": Math.floor(Math.random() * 2) + 1, // 1–2
+    "Angel": Math.floor(Math.random() * 3) + 2, // 2–4
+    "Saint": Math.floor(Math.random() * 3) + 2, // 2–4
+    "Champion": Math.floor(Math.random() * 2) + 1, // 1–2
+    "False God": Math.floor(Math.random() * 2) + 1, // 1–2
+    "Shattered God": Math.floor(Math.random() * 4) + 1 // 1–4
   };
 } else {
+  // Use exact counts from frontmatter
   tierCounts = {
     "True God": pantheonSettings.amtTrueGod,
     "Lesser God": pantheonSettings.amtLesserGod,
@@ -268,6 +363,7 @@ if (!pantheonSettings.selectedDeityCount || pantheonSettings.selectedDeityCount 
   };
 }
 
+// Mapping of tier to callout tag and color
 const tierCalloutTypes = {
   "True God": "god-true",
   "Lesser God": "god-lesser",
@@ -277,17 +373,6 @@ const tierCalloutTypes = {
   "Champion": "god-champion",
   "False God": "god-false",
   "Shattered God": "god-shattered"
-};
-
-const tierLucideIcons = {
-  "True God": "sparkles",
-  "Lesser God": "sparkle",
-  "Demigod": "flame",
-  "Angel": "feather",
-  "Saint": "heart",
-  "Champion": "trophy",
-  "False God": "shield-x",
-  "Shattered God": "zap-off"
 };
 
 const tierColorHex = {
@@ -301,11 +386,18 @@ const tierColorHex = {
   "Shattered God": "#f0f"
 };
 
-
+// Generate array of god objects for all tiers
 const gods = Object.entries(tierCounts).flatMap(([tier, count]) =>
   Array.from({ length: count }, () => generateGod(tier))
 );
 
+/*
+  ==================================
+  Section: Relationship Assignment
+  ==================================
+*/
+
+// Possible relationship pairs (e.g., Parent of / Child of, etc.)
 const RELATIONSHIP_PAIRS = [
   ...Array(4).fill(["Parent of", "Child of"]),
   ...Array(3).fill(["Sibling of", "Sibling of"]),
@@ -316,22 +408,21 @@ const RELATIONSHIP_PAIRS = [
   ["Sworn Enemy of", "Sworn Enemy of"]
 ];
 
-// Add blank relationship field
-gods.forEach(g => g.relationships = []);
+// Initialize empty relationships for each god
+gods.forEach((g) => (g.relationships = []));
 
-// Create a number of pairings
+// Assign random relationships between gods
 const relationshipCount = Math.floor(gods.length / 2);
-const pairedIndexes = [];
-
-const maxPairs = Math.floor(gods.length * 1.5); // adjust multiplier for more/fewer relationships
+const maxPairs = Math.floor(gods.length * 1.5);
 let attempts = 0;
-
 while (attempts < maxPairs) {
   const i = Math.floor(Math.random() * gods.length);
   let j = Math.floor(Math.random() * gods.length);
 
-  // Ensure not the same god and relationship doesn't already exist
-  if (i !== j && !gods[i].relationships.some(r => r.includes(`[[${gods[j].name}]]`))) {
+  if (
+    i !== j &&
+    !gods[i].relationships.some((r) => r.includes(`[[${gods[j].name}]]`))
+  ) {
     const [typeA, typeB] = pick(RELATIONSHIP_PAIRS);
     gods[i].relationships.push(`${typeA} [[${gods[j].name}]]`);
     gods[j].relationships.push(`${typeB} [[${gods[i].name}]]`);
@@ -339,27 +430,33 @@ while (attempts < maxPairs) {
   }
 }
 
-const calloutTags = ["left", "center", "right"];
-const formatGod = (god, position) => `
+/*
+  ======================
+  Section: Rendering
+  ======================
+*/
+
+// Format a single god into a callout string
+const formatGod = (god) => `
 > [!recite|no-t]
 > # [[${god.name}]] *(${god.tier})*
 > ## *${god.epithet}*
 > | Attribute | Value |
 > |---------|------|
-> | Pantheon | ${pantheon} |
-> | Domain | ${god.domain} |
-> | Alignment | ${god.alignment} |
+> | Pantheon   | ${pantheon} |
+> | Domain     | ${god.domain} |
+> | Alignment  | ${god.alignment} |
 >
 > | Attribute | Value |
 > |---------|-------|
-> | Aspects | ${god.aspects.join(", ")} |
-> | Symbols | ${god.mainSymbol}, ${god.subSymbols.join(", ")} |
-> | Colors | ${god.colors.join(", ")} |
+> | Aspects   | ${god.aspects.join(", ")} |
+> | Symbols   | ${god.mainSymbol}, ${god.subSymbols.join(", ")} |
+> | Colors    | ${god.colors.join(", ")} |
 >
 > | Attribute | Value |
 > |------|------------|
-> | Patrons | ${god.patrons.join(", ")} |
-> | Holy Day | ${god.holyDay || ""} |
+> | Patrons    | ${god.patrons.join(", ")} |
+> | Holy Day   | ${god.holyDay || ""} |
 > ${god.realm ? `> \n> **Realm**: _${god.realm}_` : ""}
 > ${god.ruinSite ? `> \n> **Ruin Site**: _${god.ruinSite}_` : ""}
 > ${god.serves ? `> \n> **Serves**: _${god.serves}_` : ""}
@@ -376,42 +473,44 @@ const formatGod = (god, position) => `
 > _${god.myth}_
 `;
 
-let summaryTable = "| Deity | Tier | Domain | Alignment | Aspects | Patrons | Symbols | Realm | Serves | Created By | Martydom | Ruin Site | Relationships |\n";
-summaryTable += "|-------|------|--------|-----------|---------|---------|---------|-------|--------|-------------|-------------|-------------|----------------|\n";
-for (const g of gods) {
-  const symbolDisplay = [g.mainSymbol, ...(g.subSymbols || [])].filter(Boolean).join(", ") || "–";
-  summaryTable += `| [[${g.name}]] | ${g.tier} | ${g.domain} | ${g.alignment} | ${g.aspects?.join(", ") || "–"} | ${g.patrons?.join(", ") || "–"} | ${symbolDisplay} | ${g.realm || "–"} | ${g.serves || "–"} | ${g.createdBy || "–"} | ${g.martyrdom || "–"} | ${g.ruinSite || "–"} | ${(g.relationships && g.relationships.length > 0 ? g.relationships.join("; ") : "–")} |\n`;
+// Build summary table header
+let summaryTable = 
+  "| Deity | Tier | Domain | Alignment | Aspects | Patrons | Symbols | Realm | Serves | Created By | Martydom | Ruin Site | Relationships |\n" +
+  "|-------|------|--------|-----------|---------|---------|---------|-------|--------|-------------|----------|-----------|---------------|\n";
+
+// Populate summary table rows
+for (const god of gods) {
+  const symbolDisplay = [god.mainSymbol, ...(god.subSymbols || [])]
+    .filter(Boolean)
+    .join(", ") || "–";
+  summaryTable += `| [[${god.name}]] | ${god.tier} | ${god.domain} | ${god.alignment} | ${god.aspects?.join(", ") || "–"} | ${god.patrons?.join(", ") || "–"} | ${symbolDisplay} | ${god.realm || "–"} | ${god.serves || "–"} | ${god.createdBy || "–"} | ${god.martyrdom || "–"} | ${god.ruinSite || "–"} | ${(god.relationships && god.relationships.length > 0 ? god.relationships.join("; ") : "–")} |\n`;
 }
 
+// Create Mermaid graph showing parent-child and sibling relationships
 let mermaidDiagram = "```mermaid\ngraph TD\n";
-
 const childToParents = new Map();
 
 // Step 1: Build child → [parents] map
-for (const g of gods) {
-  const from = g.name;
-  for (const rel of g.relationships) {
+for (const god of gods) {
+  for (const rel of god.relationships) {
     const match = rel.match(/Parent of \[\[(.*?)\]\]/);
     if (!match) continue;
     const child = match[1];
     if (!childToParents.has(child)) childToParents.set(child, new Set());
-    childToParents.get(child).add(from);
+    childToParents.get(child).add(god.name);
   }
 }
 
 // Step 2: Inherit missing parent sets from siblings
-for (const g of gods) {
-  const name = g.name;
-  if (childToParents.has(name)) continue;
-
-  const siblingMatches = g.relationships
-    .map(rel => rel.match(/Sibling of \[\[(.*?)\]\]/))
+for (const god of gods) {
+  if (childToParents.has(god.name)) continue;
+  const siblingMatches = god.relationships
+    .map((rel) => rel.match(/Sibling of \[\[(.*?)\]\]/))
     .filter(Boolean)
-    .map(m => m[1]);
-
+    .map((m) => m[1]);
   for (const sibling of siblingMatches) {
     if (childToParents.has(sibling)) {
-      childToParents.set(name, new Set(childToParents.get(sibling)));
+      childToParents.set(god.name, new Set(childToParents.get(sibling)));
       break;
     }
   }
@@ -419,7 +518,6 @@ for (const g of gods) {
 
 // Step 3: Group children by identical parent sets
 const parentSetKeyToChildren = new Map();
-
 for (const [child, parentSet] of childToParents.entries()) {
   const key = [...parentSet].sort().join("|");
   if (!parentSetKeyToChildren.has(key)) {
@@ -432,11 +530,9 @@ for (const [child, parentSet] of childToParents.entries()) {
 let synthIndex = 0;
 for (const { parents, children } of parentSetKeyToChildren.values()) {
   const synthId = `synth${synthIndex++}`;
-
   for (const parent of parents) {
     mermaidDiagram += `${parent} --> ${synthId}( )\n`;
   }
-
   for (const child of children) {
     mermaidDiagram += `${synthId} --> ${child}\n`;
   }
@@ -444,8 +540,6 @@ for (const { parents, children } of parentSetKeyToChildren.values()) {
 
 // Step 5: Add standalone gods to the diagram
 const allLinked = new Set();
-
-// Collect from parent-child links
 for (const child of childToParents.keys()) {
   allLinked.add(child);
 }
@@ -454,70 +548,67 @@ for (const parentSet of childToParents.values()) {
     allLinked.add(parent);
   }
 }
-
-// Collect from sibling links
-for (const g of gods) {
-  const name = g.name;
-  const siblingMatches = g.relationships
-    .map(rel => rel.match(/Sibling of \[\[(.*?)\]\]/))
+for (const god of gods) {
+  const siblingMatches = god.relationships
+    .map((rel) => rel.match(/Sibling of \[\[(.*?)\]\]/))
     .filter(Boolean)
-    .map(m => m[1]);
-
+    .map((m) => m[1]);
   for (const sibling of siblingMatches) {
-    allLinked.add(name);
+    allLinked.add(god.name);
     allLinked.add(sibling);
   }
 }
-
-// Render each unlinked god as a floating node
-for (const g of gods) {
-  if (!allLinked.has(g.name)) {
-    mermaidDiagram += `${g.name}\n`;
+for (const god of gods) {
+  if (!allLinked.has(god.name)) {
+    mermaidDiagram += `${god.name}\n`;
   }
 }
 
-// Mermaid-safe names (no spaces, special characters)
-const sanitizeName = name => name.replace(/[^a-zA-Z0-9_]/g, "_");
-
-// Add class assignments for each god
-for (const g of gods) {
-  const className = `god-${g.tier.toLowerCase().replace(/ /g, "-")}`;
-  mermaidDiagram += `class ${sanitizeName(g.name)} ${className}\n`;
+// Sanitize names for Mermaid and assign classes
+const sanitizeName = (name) => name.replace(/[^a-zA-Z0-9_]/g, "_");
+for (const god of gods) {
+  const className = `god-${god.tier.toLowerCase().replace(/ /g, "-")}`;
+  mermaidDiagram += `class ${sanitizeName(god.name)} ${className}\n`;
 }
-
-// Add classDefs with stroke colors
 for (const [tier, color] of Object.entries(tierColorHex)) {
   const className = `god-${tier.toLowerCase().replace(/ /g, "-")}`;
   mermaidDiagram += `classDef ${className} stroke:${color};\n`;
 }
 for (let i = 0; i < synthIndex; i++) {
-  mermaidDiagram += `class synth${i} synthNode
-`;
+  mermaidDiagram += `class synth${i} synthNode\n`;
 }
-mermaidDiagram += `classDef synthNode stroke:#999,fill:#fff,stroke-width:1px;
-`;
-
+mermaidDiagram += `classDef synthNode stroke:#999,fill:#fff,stroke-width:1px;\n`;
 mermaidDiagram += "```";
 
+/*
+  =================================
+  Section: Output to Template (tR)
+  =================================
+*/
 
-// Output plain Mermaid diagram (full-width, no callout)
+// Output Mermaid diagram (full-width, no callout)
 tR += `\n\n\`\`\`mermaid\n${mermaidDiagram.replace(/^```mermaid\n|\n```$/g, '')}\n\`\`\`\n\n`;
 
 // Output collapsible summary table
 tR += `\n\n> [!summary|bg-c-plain]+ Summary Table\n` +
-      summaryTable.split('\n').map(line => `> ${line}`).join('\n');
+  summaryTable.split('\n').map((line) => `> ${line}`).join('\n');
 
-tR += "\n\n" + gods.map((g, i) => {
-  const calloutType = tierCalloutTypes[g.tier] || "god-default";
-  const header = `> [!${calloutType}]- **[[${g.name}]]** (${g.tier})`;
-  const body = formatGod(g, calloutTags[i % calloutTags.length])
-    .split('\n')
-    .map(line => `> ${line}`)
-    .join('\n');
-  return `${header}\n${body}`;
-}).join("\n\n");
+// Output callouts for each god
+for (let i = 0; i < gods.length; i++) {
+  const god = gods[i];
+  const calloutType = tierCalloutTypes[god.tier] || "god-default";
+  const header = `> [!${calloutType}]- **[[${god.name}]]** (${god.tier})`;
+  const body = formatGod(god).split('\n').map((line) => `> ${line}`).join('\n');
+  tR += `\n\n${header}\n${body}`;
+}
 
-// Before creating each file
+/*
+  ================================
+  Section: File Creation/Export
+  ================================
+*/
+
+// Ensure a folder exists (create if missing)
 const ensureFolderExists = async (path) => {
   const existing = app.vault.getAbstractFileByPath(path);
   if (!existing) {
@@ -525,39 +616,35 @@ const ensureFolderExists = async (path) => {
   }
 };
 
-//const folder = app.vault.getAbstractFileByPath("2-World/Cosmology/Deities/");
+// Rename this Pantheon file to include a unique index if duplicates exist
 const deityFolder = app.vault.getFolderByPath("2-World/Cosmology/Deities");
-const deityChildren = deityFolder.children;
 const baseName = `${pantheon} Pantheon`;
 let count = 1;
-
-for (const child of deityChildren) {
-	if (child.name.endsWith(".md") && child.name.startsWith(baseName)) {
-		count++;
-	}
+for (const child of deityFolder.children) {
+  if (child.name.endsWith(".md") && child.name.startsWith(baseName)) {
+    count++;
+  }
 }
-
 const finalName = count === 1 ? baseName : `${baseName} ${count - 1}`;
 await tp.file.rename(finalName);
 
-
-for (const g of gods) {
-  const tierNumberMap = {
-    "True God": "1",
-    "Lesser God": "2",
-    "Demigod": "3",
-    "Angel": "4",
-    "Saint": "5",
-    "Champion": "6",
-    "False God": "7",
-    "Shattered God": "8"
-  };
-
-  const folderPath = `2-World/Cosmology/Deities/${pantheon}/${tierNumberMap[g.tier]}. ${g.tier}s`;
-  const fileName = `${g.name}.md`;
-  const fileContent = formatGod(g, "center");
+// Create a note for each generated god under the appropriate tier folder
+const tierNumberMap = {
+  "True God": "1",
+  "Lesser God": "2",
+  "Demigod": "3",
+  "Angel": "4",
+  "Saint": "5",
+  "Champion": "6",
+  "False God": "7",
+  "Shattered God": "8"
+};
+for (const god of gods) {
+  const folderPath = `2-World/Cosmology/Deities/${pantheon}/${tierNumberMap[god.tier]}. ${god.tier}s`;
+  const fileName = `${god.name}.md`;
+  const fileContent = formatGod(god);
 
   await ensureFolderExists(folderPath);
   await app.vault.create(`${folderPath}/${fileName}`, fileContent);
-}
+};
 %>
