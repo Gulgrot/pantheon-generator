@@ -51,7 +51,7 @@ const capitalizeTitle = str =>
 
 const [
   adjectives, adverbs, nouns, verbs, 
-  alignments, ambitions, aspects, colors, createdBy, domains, epithets, hierarchy, holyDays, loyalty, martydom, missions, myths, names, pantheons, patrons, realms, relationships, ruins, symbols, tenets
+  alignments, ambitions, aspects, colors, createdBy, domains, epithets, hierarchy, holyDays, loyalty, martydom, missions, myths, oldNames, pantheons, patrons, realms, relationships, ruins, symbols, tenets
 ] = await Promise.all([
   loadValues("z_Generators/Pantheon Generator/data/language/adjectives.md"),
   loadValues("z_Generators/Pantheon Generator/data/language/adverbs.md"),
@@ -109,8 +109,57 @@ const renderTemplate = (template, wordBank = DEFAULT_WORD_BANK) => {
   return capitalize(rendered);
 };
 
+// Load deity counts from Pantheon Generator frontmatter
+const loadFrontmatter = async (filepath) => {
+  const file = app.vault.getAbstractFileByPath(filepath);
+  if (!file) return {};
+  const content = await app.vault.read(file);
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return {};
+
+  const numericKeys = [
+    "amtTrueGod", "amtLesserGod", "amtDemigod",
+    "amtAngel", "amtSaint", "amtChampion",
+    "amtFalseGod", "amtShatteredGod"
+  ];
+
+  const frontmatter = Object.fromEntries(
+    match[1]
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.includes(':'))
+      .map(line => {
+        const [key, ...rest] = line.split(':');
+        const value = rest.join(':').trim();
+        return [key.trim(), numericKeys.includes(key.trim()) ? parseInt(value) : value];
+      })
+  );
+
+  return frontmatter;
+};
+
+const pantheonSettings = await loadFrontmatter("z_Generators/Pantheon Generator/settings.md");
+
+let pantheon;
+if (!pantheonSettings.selectedPantheon || pantheonSettings.selectedPantheon === "Random") {
+  pantheon = pick(pantheons);
+} else {
+  pantheon = pantheonSettings.selectedPantheon;
+}
+
+const pantheonSlug = pantheon.toLowerCase().replace(/ /g, "-");
+const pantheonNamePath = `z_Generators/Pantheon Generator/data/names/names-${pantheonSlug}.md`;
+const names = await loadValues(pantheonNamePath);
+
+const getAllDeityNames = async (rootPath) => {
+  const allFiles = app.vault.getFiles();
+  const deityFiles = allFiles.filter(f => f.path.startsWith(rootPath) && f.path.endsWith(".md"));
+  return new Set(deityFiles.map(f => f.basename.trim()));
+};
+
 const usedNames = new Set();
-const availableNames = [...names];
+const existingNames = await getAllDeityNames("2-World/Cosmology/Deities/");
+const availableNames = names.filter(name => !existingNames.has(name));
 
 const pickUniqueName = () => {
   if (availableNames.length === 0) {
@@ -120,6 +169,27 @@ const pickUniqueName = () => {
   const name = availableNames.splice(idx, 1)[0];
   usedNames.add(name);
   return name;
+};
+
+const generateGod = (tier) => {
+  const god = {
+    name: pickUniqueName(),
+    tier: tier,
+    epithet: capitalizeTitle(renderTemplate(pick(epithets))),
+    domain: pick(domains),
+    alignment: pick(alignments),
+    aspects: pickMultiple(aspects, Math.floor(Math.random() * 3) + 1),
+    colors: pickMultiple(colors, Math.floor(Math.random() * 3) + 1),
+    patrons: pickMultiple(patrons, Math.floor(Math.random() * 2) + 1),
+    holyDay: pick(holyDays),
+    tenet: pick(tenets),
+    myth: pick(myths),
+    isGoddess: Math.random() < 0.5,
+    mainSymbol: renderTemplate(pick(symbols)),
+    subSymbols: pickMultiple(nouns, Math.floor(Math.random() * 2) + 1).map(noun => capitalize(pluralize(noun))),
+  };
+  enrichByTier(god);
+  return god;
 };
 
 const enrichByTier = (god) => {
@@ -161,75 +231,42 @@ const enrichByTier = (god) => {
   }
 };
 
-// Load deity counts from Pantheon Generator frontmatter
-const loadFrontmatter = async (filepath) => {
-  const file = app.vault.getAbstractFileByPath(filepath);
-  if (!file) return {};
-  const content = await app.vault.read(file);
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return {};
+let tierCounts;
 
-  const numericKeys = [
-    "amtTrueGod", "amtLesserGod", "amtDemigod",
-    "amtAngel", "amtSaint", "amtChampion",
-    "amtFalseGod", "amtShatteredGod"
-  ];
-
-  const frontmatter = Object.fromEntries(
-    match[1]
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.includes(':'))
-      .map(line => {
-        const [key, ...rest] = line.split(':');
-        const value = rest.join(':').trim();
-        return [key.trim(), numericKeys.includes(key.trim()) ? parseInt(value) : value];
-      })
-  );
-
-  return frontmatter;
-};
-
-const pantheonSettings = await loadFrontmatter("z_Generators/Pantheon Generator/settings.md");
-
-let pantheon;
-if (!pantheonSettings.selectedPantheon || pantheonSettings.selectedPantheon === "Random") {
-  pantheon = pick(pantheons);
-} else {
-  pantheon = pantheonSettings.selectedPantheon;
-}
-
-const generateGod = (tier) => {
-  const god = {
-    name: pickUniqueName(),
-    tier: tier,
-    epithet: capitalizeTitle(renderTemplate(pick(epithets))),
-    domain: pick(domains),
-    alignment: pick(alignments),
-    aspects: pickMultiple(aspects, Math.floor(Math.random() * 3) + 1),
-    colors: pickMultiple(colors, Math.floor(Math.random() * 3) + 1),
-    patrons: pickMultiple(patrons, Math.floor(Math.random() * 2) + 1),
-    holyDay: pick(holyDays),
-    tenet: pick(tenets),
-    myth: pick(myths),
-    isGoddess: Math.random() < 0.5,
-    mainSymbol: renderTemplate(pick(symbols)),
-    subSymbols: pickMultiple(nouns, Math.floor(Math.random() * 2) + 1).map(noun => capitalize(pluralize(noun))),
+if (!pantheonSettings.selectedDeityCount || pantheonSettings.selectedDeityCount === "Random") {
+  tierCounts = {
+    "True God": Math.floor(Math.random() * 21),
+    "Lesser God": Math.floor(Math.random() * 21),
+    "Demigod": Math.floor(Math.random() * 21),
+    "Angel": Math.floor(Math.random() * 21),
+    "Saint": Math.floor(Math.random() * 21),
+    "Champion": Math.floor(Math.random() * 21),
+    "False God": Math.floor(Math.random() * 21),
+    "Shattered God": Math.floor(Math.random() * 21)
   };
-  enrichByTier(god);
-  return god;
-};
-
-const tierCounts = {
-  "True God": pantheonSettings.amtTrueGod ?? Math.floor(Math.random() * 5) + 8,
-  "Lesser God": pantheonSettings.amtLesserGod ?? Math.floor(Math.random() * 3) + 4,
-  "Demigod": pantheonSettings.amtDemigod ?? Math.floor(Math.random() * 2) + 1,
-  "Angel": pantheonSettings.amtAngel ?? Math.floor(Math.random() * 3) + 2,
-  "Saint": pantheonSettings.amtSaint ?? Math.floor(Math.random() * 3) + 2,
-  "Champion": pantheonSettings.amtChampion ?? Math.floor(Math.random() * 2) + 1,
-  "False God": pantheonSettings.amtFalseGod ?? Math.floor(Math.random() * 2) + 1,
-  "Shattered God": pantheonSettings.amtShatteredGod ?? Math.floor(Math.random() * 4) + 1
-};
+} else if (pantheonSettings.selectedDeityCount === "Balanced") {
+  tierCounts = {
+    "True God": Math.floor(Math.random() * 5) + 8,
+    "Lesser God": Math.floor(Math.random() * 3) + 4,
+    "Demigod": Math.floor(Math.random() * 2) + 1,
+    "Angel": Math.floor(Math.random() * 3) + 2,
+    "Saint": Math.floor(Math.random() * 3) + 2,
+    "Champion": Math.floor(Math.random() * 2) + 1,
+    "False God": Math.floor(Math.random() * 2) + 1,
+    "Shattered God": Math.floor(Math.random() * 4) + 1
+  };
+} else {
+  tierCounts = {
+    "True God": pantheonSettings.amtTrueGod,
+    "Lesser God": pantheonSettings.amtLesserGod,
+    "Demigod": pantheonSettings.amtDemigod,
+    "Angel": pantheonSettings.amtAngel,
+    "Saint": pantheonSettings.amtSaint,
+    "Champion": pantheonSettings.amtChampion,
+    "False God": pantheonSettings.amtFalseGod,
+    "Shattered God": pantheonSettings.amtShatteredGod
+  };
+}
 
 const tierCalloutTypes = {
   "True God": "god-true",
@@ -488,6 +525,22 @@ const ensureFolderExists = async (path) => {
   }
 };
 
+//const folder = app.vault.getAbstractFileByPath("2-World/Cosmology/Deities/");
+const deityFolder = app.vault.getFolderByPath("2-World/Cosmology/Deities");
+const deityChildren = deityFolder.children;
+const baseName = `${pantheon} Pantheon`;
+let count = 1;
+
+for (const child of deityChildren) {
+	if (child.name.endsWith(".md") && child.name.startsWith(baseName)) {
+		count++;
+	}
+}
+
+const finalName = count === 1 ? baseName : `${baseName} ${count - 1}`;
+await tp.file.rename(finalName);
+
+
 for (const g of gods) {
   const tierNumberMap = {
     "True God": "1",
@@ -500,7 +553,7 @@ for (const g of gods) {
     "Shattered God": "8"
   };
 
-  const folderPath = `2-World/Cosmology/Deities/${tierNumberMap[g.tier]}. ${g.tier}s`;
+  const folderPath = `2-World/Cosmology/Deities/${pantheon}/${tierNumberMap[g.tier]}. ${g.tier}s`;
   const fileName = `${g.name}.md`;
   const fileContent = formatGod(g, "center");
 
