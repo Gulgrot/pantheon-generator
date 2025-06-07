@@ -13,6 +13,8 @@ A randomized deity generator designed for worldbuilders, game masters, and TTRPG
 - **Automatic Overview Naming**: When you generate a pantheon, the overview note is now automatically renamed to match the species (e.g., “Human Pantheon”, “Dwarf Pantheon 2”, etc.).
 - **Improved Folder Structure**: Pantheon overviews are now organized under `2-World/Cosmology/Deities`.
   - This subfolder must be preserved; recreate it if deleted.
+- **Callout & Search Styles**: Optional CSS snippets in `.obsidian/snippets/` color the tier callouts and style the search dashboard.
+- **Search and Index Dashboards**: `overview/Divine Search.md` offers filtering by name, aspect, alignment, domain, tier, and pantheon, while `overview/Divine Index.md` lists every pantheon with its deities.
 
 ---
 
@@ -139,5 +141,8 @@ Powered by storytelling, mythography, and procedural love.
 
 - `pantheon-generator.md` – Main logic file (refactored for clarity)  
 - `settings.md` – User controls and pantheon configuration (now supports Random, Balanced, or Specific counts)  
-- `Hierarchy.md` – Divine tier structure  
-- `/data/` – Word banks (language files, expanded name lists, etc.)  
+- `Hierarchy.md` – Divine tier structure
+- `/data/` – Word banks (language files, expanded name lists, etc.)
+- `overview/Divine Search.md` – Dataview dashboard with filters and search
+- `overview/Divine Index.md` – Quick table of each pantheon by tier
+- `.obsidian/snippets/` – CSS snippets for callouts and the search layout
