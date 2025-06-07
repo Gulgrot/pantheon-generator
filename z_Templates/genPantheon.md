@@ -263,6 +263,7 @@ const pickUniqueName = () => {
 const generateGod = (tier) => {
   const baseGod = {
     name: pickUniqueName(),
+    isGoddess: Math.random() < 0.5,
     tier: tier,
     epithet: capitalizeTitle(renderTemplate(pick(epithets))),
     domain: pick(domains),
@@ -273,7 +274,6 @@ const generateGod = (tier) => {
     holyDay: pick(holyDays),
     tenet: pick(tenets),
     myth: pick(myths),
-    isGoddess: Math.random() < 0.5,
     mainSymbol: renderTemplate(pick(symbols)),
     subSymbols: pickMultiple(nouns, Math.floor(Math.random() * 2) + 1).map((noun) => capitalize(pluralize(noun)))
   };
@@ -483,7 +483,7 @@ for (const god of gods) {
   const symbolDisplay = [god.mainSymbol, ...(god.subSymbols || [])]
     .filter(Boolean)
     .join(", ") || "–";
-  summaryTable += `| [[${god.name}]] | ${god.tier} | ${god.domain} | ${god.alignment} | ${god.aspects?.join(", ") || "–"} | ${god.patrons?.join(", ") || "–"} | ${symbolDisplay} | ${god.realm || "–"} | ${god.serves || "–"} | ${god.createdBy || "–"} | ${god.martyrdom || "–"} | ${god.ruinSite || "–"} | ${(god.relationships && god.relationships.length > 0 ? god.relationships.join("; ") : "–")} |\n`;
+  summaryTable += `| [[${god.name}]] | ${god.isGoddess ? god.tier.replace(/God$/, "Goddess").replace(/god$/, "goddess") : god.tier} | ${god.domain} | ${god.alignment} | ${god.aspects?.join(", ") || "–"} | ${god.patrons?.join(", ") || "–"} | ${symbolDisplay} | ${god.realm || "–"} | ${god.serves || "–"} | ${god.createdBy || "–"} | ${god.martyrdom || "–"} | ${god.ruinSite || "–"} | ${(god.relationships && god.relationships.length > 0 ? god.relationships.join("; ") : "–")} |\n`;
 }
 
 // Create Mermaid graph showing parent-child and sibling relationships
