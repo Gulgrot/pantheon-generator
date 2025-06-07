@@ -96,7 +96,7 @@ const [
 	hierarchy,
 	holyDays,
 	loyalty,
-	martydom,
+	martyrdom,
 	missions,
 	myths,
 	pantheons,
@@ -121,7 +121,7 @@ const [
   loadValues("z_Generators/Pantheon Generator/data/hierarchy.md"),
   loadValues("z_Generators/Pantheon Generator/data/holy-days.md"),
   loadValues("z_Generators/Pantheon Generator/data/loyalty.md"),
-  loadValues("z_Generators/Pantheon Generator/data/martydom.md"),
+  loadValues("z_Generators/Pantheon Generator/data/martyrdom.md"),
   loadValues("z_Generators/Pantheon Generator/data/missions.md"),
   loadValues("z_Generators/Pantheon Generator/data/myths.md"),
   loadValues("z_Generators/Pantheon Generator/data/pantheons.md"),
@@ -301,7 +301,7 @@ const enrichByTier = (god) => {
       break;
     case "Saint":
       god.aspects = ["-"];
-      god.martyrdom = pick(martydom);
+      god.martyrdom = pick(martyrdom);
       break;
     case "Champion":
       god.aspects = ["-"];
@@ -315,7 +315,7 @@ const enrichByTier = (god) => {
       break;
     case "Shattered God":
       god.holyDay = "-";
-      god.martyrdom = pick(martydom);
+      god.martyrdom = pick(martyrdom);
       god.ruinSite = capitalizeTitle(renderTemplate(pick(ruins)));
       break;
   }
@@ -475,7 +475,7 @@ const formatGod = (god) => `
 
 // Build summary table header
 let summaryTable = 
-  "| Deity | Tier | Domain | Alignment | Aspects | Patrons | Symbols | Realm | Serves | Created By | Martydom | Ruin Site | Relationships |\n" +
+  "| Deity | Tier | Domain | Alignment | Aspects | Patrons | Symbols | Realm | Serves | Created By | Martyrdom | Ruin Site | Relationships |\n" +
   "|-------|------|--------|-----------|---------|---------|---------|-------|--------|-------------|----------|-----------|---------------|\n";
 
 // Populate summary table rows
@@ -642,7 +642,35 @@ const tierNumberMap = {
 for (const god of gods) {
   const folderPath = `2-World/Cosmology/Deities/${pantheon}/${tierNumberMap[god.tier]}. ${god.tier}s`;
   const fileName = `${god.name}.md`;
-  const fileContent = formatGod(god);
+  const yamlBlock = `---
+name: ${god.name}
+epithet: "${god.epithet}"
+tier: ${god.tier}
+pantheon: ${pantheon}
+domain: ${god.domain}
+alignment: ${god.alignment}
+aspects: [${god.aspects.map(a => `"${a}"`).join(", ")}]
+symbols:
+  main: "${god.mainSymbol}"
+  sub: [${god.subSymbols.map(s => `"${s}"`).join(", ")}]
+colors: [${god.colors.map(c => `"${c}"`).join(", ")}]
+patrons: [${god.patrons.map(p => `"${p}"`).join(", ")}]
+holy_day: ${god.holyDay ? `"${god.holyDay}"` : ""}
+tenet: "${god.tenet}"
+myth: "${god.myth}"
+realm: ${god.realm ? `"${god.realm}"` : ""}
+ruin_site: ${god.ruinSite ? `"${god.ruinSite}"` : ""}
+serves: ${god.serves ? `"${god.serves}"` : ""}
+created_by: ${god.createdBy ? `"${god.createdBy}"` : ""}
+ambition: ${god.ambition ? `"${god.ambition}"` : ""}
+martyrdom: ${god.martyrdom ? `"${god.martyrdom}"` : ""}
+mission: ${god.mission ? `"${god.mission}"` : ""}
+relationships: [${god.relationships.map(r => `"${r}"`).join(", ")}]
+is_goddess: ${god.isGoddess}
+---`;
+
+const fileContent = `${yamlBlock}\n\n${formatGod(god)}`;
+
 
   await ensureFolderExists(folderPath);
   await app.vault.create(`${folderPath}/${fileName}`, fileContent);

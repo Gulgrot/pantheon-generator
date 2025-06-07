@@ -1,13 +1,13 @@
 ---
-selectedPantheon: Random
-amtTrueGod: 15
-amtLesserGod: 12
-amtDemigod: 10
-amtAngel: 8
-amtSaint: 8
-amtChampion: 5
-amtFalseGod: 14
-amtShatteredGod: 9
+selectedPantheon: Goblin
+amtTrueGod: 2
+amtLesserGod: 2
+amtDemigod: 2
+amtAngel: 2
+amtSaint: 2
+amtChampion: 2
+amtFalseGod: 2
+amtShatteredGod: 2
 selectedDeityCount: Reference Values Below
 ---
 >[!metadata]+ Deity Settings

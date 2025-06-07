@@ -1,0 +1,134 @@
+/* ──────────────────────────────────────────────
+   Layout: Container + Top Controls
+────────────────────────────────────────────── */
+.dv-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-container, /* alternate name for top row in some templates */  
+.top-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ──────────────────────────────────────────────
+   Controls: Search Inputs + Clear Button
+────────────────────────────────────────────── */
+.name-search,
+.search-input {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+.clear-filters,
+.clear-filters-btn {
+  padding: 0.4rem 0.8rem;
+  background-color: var(--interactive-accent);
+  color: var(--text-accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.clear-filters:hover,
+.clear-filters-btn:hover {
+  background-color: var(--interactive-accent-hover);
+}
+
+/* ──────────────────────────────────────────────
+   Filters: Boxes and Labels
+────────────────────────────────────────────── */
+.filter-box,
+.filter-group { /* alias if you switch naming conventions */
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 0.6rem;
+  display: inline-block;
+  vertical-align: top;
+  min-width: 160px;
+  box-shadow: var(--background-modifier-shadow);
+  margin-right: 0.5rem;
+}
+
+.box-title,
+.filter-group > strong {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.filter-label input {
+  margin-right: 0.3rem;
+}
+
+/* for any dropdowns you add later */
+.filter-select {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+/* ──────────────────────────────────────────────
+   Results: Section + “No results” Placeholder
+────────────────────────────────────────────── */
+.results-section,
+.results {
+  margin-top: 1rem;
+}
+
+.results-title {
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.no-results {
+  text-align: center;
+  padding: 0.8rem;
+  font-style: italic;
+  color: var(--text-faint);
+}
+
+/* ──────────────────────────────────────────────
+   Table: Layout + Cells + Links
+────────────────────────────────────────────── */
+.results-table,
+.pantheon-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.results-th,
+.results-td,
+.pantheon-table th,
+.pantheon-table td {
+  border: 1px solid var(--background-modifier-border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.results-th,
+.pantheon-table th {
+  background-color: var(--background-secondary);
+}

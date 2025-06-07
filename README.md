@@ -11,9 +11,8 @@ A randomized deity generator designed for worldbuilders, game masters, and TTRPG
 - **Species-Linked Names**: Generated deity names are now tied directly to the selected species (e.g., Drawn from `names-human.md`, `names-dwarf.md`, etc.).
 - **Refactored `genPantheon.md`**: The main generator template has been reorganized for better readability and easier maintenance (utility functions, name handling, deity creation, and file-creation logic are now clearly separated).
 - **Automatic Overview Naming**: When you generate a pantheon, the overview note is now automatically renamed to match the species (e.g., “Human Pantheon”, “Dwarf Pantheon 2”, etc.).
-- **Improved Folder Structure**: Pantheon overviews are now organized `2-World/Cosmology/Deities).
-	- This subfolder now needs to be preserved and cannot be deleted.
-	- If deleted, simply just recreate it.
+- **Improved Folder Structure**: Pantheon overviews are now organized under `2-World/Cosmology/Deities`.
+  - This subfolder must be preserved; recreate it if deleted.
 
 ---
 
